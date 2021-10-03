@@ -2,7 +2,7 @@ import cv2
 import os
 import numpy as np
 import imutils
-#this is a change 3
+#this is a change 4
 I = 0
 
 coords = [] # coordinates list
