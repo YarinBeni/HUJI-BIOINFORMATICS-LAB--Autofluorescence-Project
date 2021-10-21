@@ -2,10 +2,11 @@ import cv2
 import os
 import numpy as np
 import imutils
-#this is a change 4
+
+# this is a change 4
 I = 0
 
-coords = [] # coordinates list
+coords = []  # coordinates list
 cropping = False
 image = []
 images = []
@@ -13,6 +14,11 @@ flag = True
 angle = 0
 cnt = 0
 DATASET_PATH = r"C:\Users\yarin\PycharmProjects\pythonProject\temp_dataset_divded"
+
+
+# todo: make corp and rotated multiple times in a loop
+# todo: to fix not corping from bottoms up
+# todo: fix "r" for restrat rectangle in corp
 
 
 def click_and_crop(event, x, y, flags, param):
