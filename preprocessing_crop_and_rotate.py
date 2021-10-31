@@ -2,10 +2,10 @@ import cv2
 import os
 import numpy as np
 import imutils
-
-# this is a change 4
+#this is a change 4
 I = 0
-
+prepro = True
+samples = []
 coords = []  # coordinates list
 cropping = False
 image = []
@@ -73,7 +73,7 @@ def corp_image(img):
 
 def get_angle(img):
     global angle
-    for ang in np.arange(0, 720, 5):
+    for ang in np.arange(0, 360*10, 5):
         rotated = imutils.rotate_bound(img, ang)
         cv2.imshow("Rotated (Correct)", rotated)
         key = cv2.waitKey(750)
@@ -91,6 +91,8 @@ def get_angle(img):
 for dirpath, dirnames, filesname in os.walk(DATASET_PATH):  # search in database folder
     if filesname:  # means there is photos in the folder
         for f in filesname:  # for all pictures in sub folder
+            # open new folder for the new pictures
+
             if f.endswith("(DIC)_M0000_ORG.tif"):  # if its the color image
                 image = cv2.imread("{}\{}".format(dirpath, f))  # upload the image
                 clone = image.copy()
@@ -111,4 +113,31 @@ for dirpath, dirnames, filesname in os.walk(DATASET_PATH):  # search in database
                         fn, fext = os.path.splitext(photo_name)  # if in future want to change format
                         cv2.imwrite(dirc + "\{}{}".format(fn, fext), roi_sample)  # save new picture in new folder
                     coords = []  # reset refpt
-                #
+
+
+############################################################################################################
+#  todo: make a get pad from each image in preprocessing and than make all images same max size with padding
+#                                         WORK IN PROGRESS IN THIS SECTION
+############################################################################################################
+def get_pad_size(dataset, pad_size=[0, 0]):
+    """get the minimal contain rectangle of the a batch"""
+    for sample in dataset:
+        image, label = sample
+        col_len = len(image[0][0])
+        row_len = len(image[0])
+        if col_len > pad_size[1]:
+            pad_size[1] = col_len
+        if row_len > pad_size[0]:
+            pad_size[0] = row_len
+    return pad_size
+
+
+# in this data the biggest is (202,933)
+
+# max_width, max_height = pad_size
+# The needed padding is the difference between the
+# max width/height and the image's actual width/height.
+# if this work i should have a list of the padded images with the same size
+
+# images_iter = [F.pad(img, [0, max_width - img.size(2), 0, max_height - img.size(1)]) for img in dataloader]
+#####################################################################################################################
