@@ -34,31 +34,34 @@ import glob
 ####################################################
 params = {
     # optional parameters maybe more ?    "model": "U-net","device": "cuda","lr": 0.001,
-    "batch_size": 3,  # todo: at the moment the number of image per sample check if need to be changed
-    "num_workers": 4,  # todo: relearn whats workers and ask what will be ours
-    "image_size": 256,  # todo: to ask if this need to be the max from worms size padded up square or rectangle and how
-    "in_channels": 1,  # TODO: to make sure because its gray image 1 channel or maybe 3 from tensor size?
-    "num_classes": 0  # TODO: to make sure we dont have classes because our label is an image
+    "batch_size": 3,  # todo:the number of image per sample check if need to be changed -A: FOR NOW ITS FINE !
+    "num_workers": 4,  # todo: relearn whats workers and ask what will be ours -A: itay explained NEED TO GO DEEPER in TRAINING MODEL !
+    "image_size": 256,  # todo: to ask if this need to be the max from worms size padded up square or rectangle and how -A: FORNOW FINE !
+    "in_channels": 1,  # TODO: to make sure because its gray image 1 channel or maybe 3 from tensor size? -A: YES
+    "num_classes": None  # TODO: to make sure we dont have classes because our label is an image -A: EXACTLY !
 }
 #######################################################
 #               Define Transforms
 #######################################################
-# todo: when i preprocessed the raw-images i used imread defualt fiture that was color image and now my database images
-#  1)do I need to preprocess them again with flag for gray or we can work from here?
+
+# todo: when i preprocessed the raw-images i used imread default fixture that was color image and now my database images
+#  1)do I need to preprocess them again with flag for gray or we can work from here? - A:NEED TO DO AGAIN CHANGED PIXELS!
 #  2)do I need to add to train transform Compose the function Grayscale(num_output_channels=1) or is imread() with
-#  flag 0 in __Getitem__ is enough?
+#  flag 0 in __Getitem__ is enough?  - A:imread with falg 0 is enough !
 train_transform = transforms.Compose([transforms.ToTensor()])
 
 ####################################################
 #       Create Train, Valid and Test sets
 ####################################################
 
-# todo: how to split dataset into train and test sets? in folders structure in advanced or in runtime?
-# todo: to ask if the label of each sample will be additional image in the sample folder for each sample?
-# yarin solution:
-# maybe to get labels folder path parameter and make a folder of labels(images) with name according to sample name and
-# use make_path_list of labels(images) and to make image_to_label dictionary and make WormsDataset get the the
-# dictionary as parameter and than to make get__item return (image, label=dic[images_path[index])?
+# todo: how to split dataset into train and test sets? in folders structure in advanced or in runtime? - A: datasplit
+#  (Random) meanwhile self divided with index (read on torchvision.utils.data random-split) and it happens before dataloaders
+#  todo: to ask if the label of each sample will be additional image in the sample folder for each
+#   sample? ** yarin solution: maybe to get labels folder path parameter and make a folder of labels(images) with
+#   name according to sample name and use make_path_list of labels(images) and to make image_to_label dictionary and
+#   make WormsDataset get the the dictionary as parameter and than to make get__item return (image, label=dic[
+#   images_path[index])? A: the florescence picture is the label and dic is the image already inside the database!
+
 
 
 TRAIN_DATASET_PATH = r"C:\Users\yarin\PycharmProjects\pythonProject\tempo_dataset\database_second_iter"
@@ -83,7 +86,7 @@ def make_paths_list(data_path):
 train_image_paths = make_paths_list(TRAIN_DATASET_PATH)
 
 
-# todo: ask if need to shuffle the paths of images
+# todo: ask if need to shuffle the paths of images - A: no need will be happening in the dataloader
 # random.shuffle(train_image_paths)
 
 def show_dataset_paths(paths):
@@ -119,18 +122,17 @@ class WormsDataset(Dataset):
     def __len__(self):
         return len(self.image_paths)
 
-    def __getitem__(self, index):  # todo: ask if its ok i am running over database class __getitem__ func?
+    def __getitem__(self, index):  # todo: ask if its ok i am running over database class __getitem__ func? -A: its fine.
         image_filepath = self.image_paths[index]
 
-        # todo: ask why cv2.imread() not referenced? saw pycharm error, and its working ! maybe ignore
+        # todo: ask why cv2.imread() not referenced? saw pycharm error, and its working !-A:  Seems fine ignore it !
         image = cv2.imread(image_filepath, 0)  # 0 is grey flag
-
-        # todo: ask if any transformation to the image is needed?
-        # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         if self.transform:
             image = self.transform(image)
-        y_label = image  # todo: temporary until labels structure is solved, than change it to real label
+        y_label = image  # todo: temporary until labels structure is solved, than change it to real label -
+        # A: need to build a function that read DIC or florescence picture and dic is the image and florescence
+        # is the label
         return image, y_label
 
 
@@ -180,7 +182,6 @@ def show_in_grid(images_iter):
 
 
 # UN COMMENT the action you desired:
-
 # #this will show in one grid all 3 samples of same image
 # show_in_grid(train_loader)
 # #this will show all images one by one
@@ -190,9 +191,8 @@ def show_in_grid(images_iter):
 #######################################################
 #                  Define Dataloader
 #######################################################
-# todo: until images arent same size cant use shuffle
+# todo: until images arent same size cant use shuffle - need to be fixed int the preprocessing step !
 train_loader = DataLoader(train_dataset, batch_size=params["batch_size"], shuffle=False)
-
 # valid_loader = DataLoader(
 #     valid_dataset, batch_size=params["batch_size"], shuffle=True
 # )
