@@ -115,29 +115,4 @@ for dirpath, dirnames, filesname in os.walk(DATASET_PATH):  # search in database
                     coords = []  # reset refpt
 
 
-############################################################################################################
-#  todo: make a get pad from each image in preprocessing and than make all images same max size with padding
-#                                         WORK IN PROGRESS IN THIS SECTION
-############################################################################################################
-def get_pad_size(dataset, pad_size=[0, 0]):
-    """get the minimal contain rectangle of the a batch"""
-    for sample in dataset:
-        image, label = sample
-        col_len = len(image[0][0])
-        row_len = len(image[0])
-        if col_len > pad_size[1]:
-            pad_size[1] = col_len
-        if row_len > pad_size[0]:
-            pad_size[0] = row_len
-    return pad_size
-
-
-# in this data the biggest is (202,933)
-
-# max_width, max_height = pad_size
-# The needed padding is the difference between the
-# max width/height and the image's actual width/height.
-# if this work i should have a list of the padded images with the same size
-
-# images_iter = [F.pad(img, [0, max_width - img.size(2), 0, max_height - img.size(1)]) for img in dataloader]
 #####################################################################################################################
