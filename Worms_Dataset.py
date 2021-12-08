@@ -140,9 +140,7 @@ params["image_max_size"] = get_rectangle(paths_list)
 class WormsDataset(Dataset):
     def __init__(self, image_paths, transform_dic):
         self.image_paths = image_paths
-        self.space_transform = transform_dic["space_transform"]
-        self.dic_transform = transform_dic["dic_transform"]
-        self.flor_transform = transform_dic["flor_transform"]
+        self.transform_dic = transform_dic
 
     def __len__(self):
         return len(self.image_paths)
@@ -159,10 +157,10 @@ class WormsDataset(Dataset):
         if w_pad % 2 != 0:
             w1_pad = int(math.ceil(w_pad / 2)) - 1
             w2_pad = int(math.ceil(w_pad / 2))
-
         else:
             w1_pad = int(math.ceil(w_pad / 2))
             w2_pad = int(math.ceil(w_pad / 2))
+
         if h_pad % 2 != 0:
             h1_pad = int(math.ceil(h_pad / 2)) - 1
             h2_pad = int(math.ceil(h_pad / 2))
@@ -195,11 +193,11 @@ class WormsDataset(Dataset):
         # print("size of flor: ", florescence_image.shape)
         # print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n")
 
-        if self.space_transform:
+        if self.transform_dic["space_transform"]:
             h_joined_images = torch.cat((dic_image, florescence_image), 0)
             # print("size of joined before transform: ", h_joined_images.shape)
 
-            h_joined_images = self.space_transform(h_joined_images)
+            h_joined_images = self.transform_dic["space_transform"](h_joined_images)
             # print("size of joined after transform: \n", h_joined_images.shape)
 
             dic_image = h_joined_images[0]
@@ -208,11 +206,11 @@ class WormsDataset(Dataset):
             # print("size of flor after transform: ", florescence_image.shape)
             # print()
 
-        if self.dic_transform:
-            dic_image = self.dic_transform(dic_image)
+        if self.transform_dic["dic_transform"]:
+            dic_image = self.transform_dic["dic_transform"](dic_image)
 
-        if self.flor_transform:
-            florescence_image = self.flor_transform(florescence_image)
+        if self.transform_dic["flor_transform"]:
+            florescence_image = self.transform_dic["flor_transform"](florescence_image)
 
         # NEW TODO: this label is mcher image in future will be florescence
         return dic_image, florescence_image, self.image_paths[index]
@@ -231,7 +229,7 @@ train_dataset = WormsDataset(paths_list, TRANSFORMS_DIC)
 #######################################################
 #                  Define Dataloader
 #######################################################
-# todo: until images arent same size cant use shuffle - need to be fixed int the preprocessing step !
+#  until images arent same size cant use shuffle - need to be fixed int the preprocessing step ! A: FIXED
 train_loader = DataLoader(train_dataset, batch_size=params["batch_size"], shuffle=False)
 
 
