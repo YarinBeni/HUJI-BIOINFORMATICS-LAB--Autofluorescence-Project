@@ -38,7 +38,7 @@ import torch
 # todo: relearn whats workers and ask what will be ours -A: itay explained NEED TO GO DEEPER in TRAINING MODEL !
 params = {
     # optional parameters maybe more ?    "model": "U-net","device": "cuda","lr": 0.001,
-    "batch_size": 2,  # the number of image per sample check if need to be changed -A: FOR NOW ITS FINE !
+    "batch_size": 5,  # the number of image per sample check if need to be changed -A: FOR NOW ITS FINE !
     "num_workers": 4,
     "image_max_size": (0, 0),
     # to ask if this need to be the max from worms size padded up square or rectangle and how -A: FOR NOW FINE in future will need to be max padded!
@@ -60,7 +60,7 @@ TRANSFORMS_DIC = {"space_transform": None, "dic_transform": None, "flor_transfor
 # NEW TODO: 1) whats specific transforms i need to uses when using cat(NOT ON COLOUR CHANNEL ON SPACE RELATED)
 
 ####################################################
-#       Create Train, Valid and Test sets
+#       Preprocessing Create Train, Valid and Test sets
 ####################################################
 
 # how to split dataset into train and test sets? in folders structure in advanced or in runtime? - A: datasplit
@@ -130,6 +130,10 @@ params["image_max_size"] = get_rectangle(paths_list)
 
 
 # show_dataset_paths(paths_list)
+
+#######################################################
+#                  Create Dataset
+#######################################################
 
 
 # from here until row 125 are things mayby will be in use according to solution to the to do up top.
@@ -216,15 +220,12 @@ class WormsDataset(Dataset):
         return dic_image, florescence_image, self.image_paths[index]
 
 
-#######################################################
-#                  Create Dataset
-#######################################################
-
 
 train_dataset = WormsDataset(paths_list, TRANSFORMS_DIC)
 
 # valid_dataset = WormsDataset(valid_image_paths,test_transforms) #test transforms are applied
 # test_dataset = WormsDataset(test_image_paths,test_transforms)
+
 
 #######################################################
 #                  Define Dataloader
@@ -241,6 +242,23 @@ train_loader = DataLoader(train_dataset, batch_size=params["batch_size"], shuffl
 #     test_dataset, batch_size=params["batch_size"], shuffle=False
 # )
 
+
+def test_batch_shape(dataset_iter):
+    cnt = 0
+    for batch in dataset_iter:
+        print(f"this is the type of batch: {type(batch)} and len: {len(batch)}")
+        print(f"this is batch number {cnt}")
+        for i in range(len(batch)):
+            print(f"this is batch[{i}] type: {type(batch[i])}\nbatch:\n{batch[i]}")
+            try:
+                print(f"this is tensor shape {batch[i].shape}")
+            except AttributeError:
+                pass
+            print()
+        cnt = +1
+        print("-----------------------------------------------------------------------")
+
+#test_batch_shape(train_loader)
 
 #######################################################
 #                  Visualize Dataset
@@ -283,4 +301,3 @@ def show_in_grid(images_iter):
 #mshow_in_grid(train_loader)
 # #this will show all images one by one
 # show_images_one_by_one(train_loader) #WORKS BETTER WITH COLOUR
-
