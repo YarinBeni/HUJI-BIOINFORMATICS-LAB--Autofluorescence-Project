@@ -1,5 +1,7 @@
+
 Worms_Dataset TEST: 
-in the database_second_iter folder: 
+
+in the database_second_iter folder:
 5 samples, folder for each sample and in every sample 3 images: EGFP,DIC,MCHER.
 when DIC is image and EGFP is label ( not using MCHER)
 and max contain rectangle is (203, 933)
