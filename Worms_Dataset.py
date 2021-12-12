@@ -38,13 +38,14 @@ import torch
 # todo: relearn whats workers and ask what will be ours -A: itay explained NEED TO GO DEEPER in TRAINING MODEL !
 params = {
     # optional parameters maybe more ?    "model": "U-net","device": "cuda","lr": 0.001,
-    "batch_size": 5,  # the number of image per sample check if need to be changed -A: FOR NOW ITS FINE !
+    "batch_size": 2,  # the number of image per sample check if need to be changed -A: FOR NOW ITS FINE !
     "num_workers": 4,
     "image_max_size": (0, 0),
     # to ask if this need to be the max from worms size padded up square or rectangle and how -A: FOR NOW FINE in future will need to be max padded!
     "in_channels": 1,  # to make sure because its gray image 1 channel or maybe 3 from tensor size? -A: YES
     "num_classes": None  # to make sure we dont have classes because our label is an image -A: EXACTLY !
 }
+
 #######################################################
 #               Define Transforms
 #######################################################
@@ -79,7 +80,7 @@ TRAIN_DATASET_PATH = r"C:\Users\yarin\PycharmProjects\pythonProject\tempo_datase
 # this run on database folders and make a list of images paths when
 
 
-MCHER_LABEL = "01(mCher)_M0000_ORG.tif"
+EGFP_LABEL = "00(EGFP)_M0000_ORG.tif"
 DIC_LABEL = "02(DIC)_M0000_ORG.tif"
 
 
@@ -128,8 +129,6 @@ def get_rectangle(path_list):
 paths_list = make_paths_list(TRAIN_DATASET_PATH)
 params["image_max_size"] = get_rectangle(paths_list)
 
-
-# show_dataset_paths(paths_list)
 
 #######################################################
 #                  Create Dataset
@@ -180,7 +179,7 @@ class WormsDataset(Dataset):
 
     def __getitem__(self, index):  # ask if its ok i am running over database class __getitem__ func? -A: its fine.
         dic_image_filepath = self.image_paths[index] + DIC_LABEL
-        florescence_image_path = self.image_paths[index] + MCHER_LABEL
+        florescence_image_path = self.image_paths[index] + EGFP_LABEL
         # ask why cv2.imread() not referenced? saw pycharm error, and its working !-A:  Seems fine ignore it !
 
         dic_image = torch.from_numpy(cv2.imread(dic_image_filepath, 0))  # 0 is grey flag
@@ -220,9 +219,6 @@ class WormsDataset(Dataset):
         return dic_image, florescence_image, self.image_paths[index]
 
 
-
-train_dataset = WormsDataset(paths_list, TRANSFORMS_DIC)
-
 # valid_dataset = WormsDataset(valid_image_paths,test_transforms) #test transforms are applied
 # test_dataset = WormsDataset(test_image_paths,test_transforms)
 
@@ -231,8 +227,6 @@ train_dataset = WormsDataset(paths_list, TRANSFORMS_DIC)
 #                  Define Dataloader
 #######################################################
 #  until images arent same size cant use shuffle - need to be fixed int the preprocessing step ! A: FIXED
-train_loader = DataLoader(train_dataset, batch_size=params["batch_size"], shuffle=False)
-
 
 # valid_loader = DataLoader(
 #     valid_dataset, batch_size=params["batch_size"], shuffle=True
@@ -246,19 +240,29 @@ train_loader = DataLoader(train_dataset, batch_size=params["batch_size"], shuffl
 def test_batch_shape(dataset_iter):
     cnt = 0
     for batch in dataset_iter:
-        print(f"this is the type of batch: {type(batch)} and len: {len(batch)}")
         print(f"this is batch number {cnt}")
+        print(f"this is the type of batch: {type(batch)} and len: {len(batch)}"
+              f"\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         for i in range(len(batch)):
-            print(f"this is batch[{i}] type: {type(batch[i])}\nbatch:\n{batch[i]}")
-            try:
-                print(f"this is tensor shape {batch[i].shape}")
-            except AttributeError:
-                pass
-            print()
-        cnt = +1
-        print("-----------------------------------------------------------------------")
+            print(f"this is batch[{i}] type: {type(batch[i])}")
+            if i == 0:
+                print(f"this is the DIC images tensor shape: {batch[i].shape}")
+                print(f"\nthis is DIC images tensor::\n{batch[i]}")
+                print("\n-----------------------------------------------------------------------")
 
-#test_batch_shape(train_loader)
+            if i == 1:
+                print(f"this is the EGFP images tensor shape: {batch[i].shape}")
+                print(f"\nthis is EGFP images tensor:\n{batch[i]}")
+                print("\n-----------------------------------------------------------------------")
+
+            if i ==2:
+                print(f"this is the tuple contain the paths to the images:\n {batch[i]}")
+        print(f"\n"
+              f"Finish of batch number {cnt}\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n.\n.\n.\n")
+        cnt = +1
+
+
+# test_batch_shape(train_loader)
 
 #######################################################
 #                  Visualize Dataset
@@ -288,16 +292,33 @@ def show_in_grid(images_iter):
     for batch in images_iter:
         # batch = next(iter(dataloader))
         dic_image, flor_label, path = batch
-        grid1 = torchvision.utils.make_grid(dic_image, nrow=5)
-        grid2 = torchvision.utils.make_grid(flor_label, nrow=5)
+        grid = torchvision.utils.make_grid(dic_image, nrow=params["batch_size"])
         plt.figure(figsize=(15, 15))
-        plt.imshow(np.transpose(grid1, (1, 2, 0)))
-        plt.show()
-        plt.imshow(np.transpose(grid2, (1, 2, 0)))
+        plt.imshow(np.transpose(grid, (1, 2, 0)))
         plt.show()
 
 
-# #this will show in one grid all 3 samples of same image
-#mshow_in_grid(train_loader)
-# #this will show all images one by one
-# show_images_one_by_one(train_loader) #WORKS BETTER WITH COLOUR
+
+
+############################################################################################################
+# ********************************TEST the shape of the batch: **********************************************
+# 1) change num into the wanted batch size
+# 2) download database from git and update test_path accordingly
+# 3) run test_batch_shape to get the batch shape and information ,
+# batch[0] = DIC images, batch[1] = EFGP images(labels) , batch[2] = tuple contain path
+# in the dataset folder:
+# 5 samples, folder for each sample and in every sample 3 images: EGFP,DIC,MCHER.
+# when DIC is image and EGFP is label ( not using MCHER)
+# and max contain rectangle is (203, 933)
+############################################################################################################
+#
+# num = 2
+# test_path = r"C:\Users\yarin\PycharmProjects\pythonProject\tempo_dataset\database_second_iter"
+#
+# # driver:
+# params["batch_size"] = num
+# TRAIN_DATASET_PATH = test_path
+# train_dataset = WormsDataset(paths_list, TRANSFORMS_DIC)
+# train_loader = DataLoader(train_dataset, batch_size=params["batch_size"], shuffle=False)
+# test_batch_shape(train_loader)
+
