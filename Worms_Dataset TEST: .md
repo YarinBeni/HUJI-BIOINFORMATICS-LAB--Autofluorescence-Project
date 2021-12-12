@@ -7,7 +7,8 @@ when DIC is image and EGFP is label ( not using MCHER)
 and max contain rectangle is (203, 933)
 
 # TEST the shape of the batch: 
-# 1) change num into the wanted batch size
-# 2) download database_second_iter from repository and update test_path accordingly
-# 3) run test_batch_shape to get the batch shape and information
+# 1) download repository 
+# 2) go into Worms_Dataset scroll to the end of the file: 
+# 3) update test_path according to database_second_iter path and update num into the wanted batch size
+# 4) run test_batch_shape to get the batch shape and information print into python console
 
