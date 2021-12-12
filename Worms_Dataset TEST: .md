@@ -1,9 +1,4 @@
-# Yarin-s_Code
-trying to give the autofluorescence problem a solution using computer vision and deep learning techniques.
-
-
 Worms_Dataset TEST: 
-
 
 # TEST the shape of the batch: 
 # 1) change num into the wanted batch size
