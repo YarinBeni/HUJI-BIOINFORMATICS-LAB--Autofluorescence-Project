@@ -302,15 +302,16 @@ def show_in_grid(images_iter):
 
 ############################################################################################################
 # ********************************TEST the shape of the batch: **********************************************
-# 1) change num into the wanted batch size
-# 2) download database from git and update test_path accordingly
-# 3) run test_batch_shape to get the batch shape and information ,
-# batch[0] = DIC images, batch[1] = EFGP images(labels) , batch[2] = tuple contain path
-# in the dataset folder:
-# 5 samples, folder for each sample and in every sample 3 images: EGFP,DIC,MCHER.
-# when DIC is image and EGFP is label ( not using MCHER)
-# and max contain rectangle is (203, 933)
+#Worms_Dataset TEST:
+#in the database_second_iter folder: 
+#5 samples, folder for each sample and in every sample 3 images: EGFP,DIC,MCHER.
+#when DIC is image and EGFP is label ( not using MCHER) and max contain rectangle is (203, 933)
+        
+# TEST the shape of the batch:
+# 1) update test_path according to database_second_iter path and update num into the wanted batch size
+# 2) run test_batch_shape to get the batch shape and information print into python console
 ############################################################################################################
+
 #
 num = 3
 test_path = r"C:\Users\yarin\PycharmProjects\pythonProject\tempo_dataset\database_second_iter"

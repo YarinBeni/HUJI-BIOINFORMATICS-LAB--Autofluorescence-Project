@@ -1,5 +1,0 @@
-preprocessing_crop_and_rotated_INFO:
-with this code I am uploading samples from the lab database is arranged every same has a folder consist of n=3 images for one sample.
-the code finds the colored image of a sample and than in semi-automatic manner with GUI gets corp coordinates and angle for corp and than implemnt it for all the images of the sample
-when this process is finished for all the samples the new database is being saved.
-
