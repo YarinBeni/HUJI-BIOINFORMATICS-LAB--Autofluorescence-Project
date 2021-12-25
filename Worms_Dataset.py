@@ -1,5 +1,4 @@
 import math
-
 import torchvision
 import matplotlib.pyplot as plt
 from pandas.core.common import flatten
@@ -41,15 +40,17 @@ params = {
     "batch_size": 2,  # the number of image per sample check if need to be changed -A: FOR NOW ITS FINE !
     "num_workers": 4,
     "image_max_size": (0, 0),
-    # to ask if this need to be the max from worms size padded up square or rectangle and how -A: FOR NOW FINE in future will need to be max padded!
     "in_channels": 1,  # to make sure because its gray image 1 channel or maybe 3 from tensor size? -A: YES
     "num_classes": None  # to make sure we dont have classes because our label is an image -A: EXACTLY !
 }
+# to ask if this need to be the max from worms size padded up square or rectangle and how
+# -A: FOR NOW FINE in future will need to be max padded!
 
 #######################################################
 #               Define Transforms
 #######################################################
 TRANSFORMS_DIC = {"space_transform": None, "dic_transform": None, "flor_transform": None}
+
 #  when i preprocessed the raw-images i used imread default fixture that was color image and now my database images
 #  1)do I need to preprocess them again with flag for gray or we can work from here? - A:NEED TO DO AGAIN CHANGED PIXELS!
 #  2)do I need to add to train transform Compose the function Grayscale(num_output_channels=1) or is imread() with
@@ -255,7 +256,7 @@ def test_batch_shape(dataset_iter):
                 print(f"\nthis is EGFP images tensor:\n{batch[i]}")
                 print("\n-----------------------------------------------------------------------")
 
-            if i ==2:
+            if i == 2:
                 print(f"this is the tuple contain the paths to the images:\n {batch[i]}")
         print(f"\n"
               f"Finish of batch number {cnt}\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n.\n.\n.\n")
@@ -291,13 +292,12 @@ def show_in_grid(images_iter):
     """gets dataloader object and print in one grid all images of same sample"""
     for batch in images_iter:
         # batch = next(iter(dataloader))
+        # add print path and show image&label cat together
         dic_image, flor_label, path = batch
         grid = torchvision.utils.make_grid(dic_image, nrow=params["batch_size"])
         plt.figure(figsize=(15, 15))
         plt.imshow(np.transpose(grid, (1, 2, 0)))
         plt.show()
-
-
 
 
 ############################################################################################################
@@ -312,13 +312,21 @@ def show_in_grid(images_iter):
 # and max contain rectangle is (203, 933)
 ############################################################################################################
 #
-# num = 2
-# test_path = r"C:\Users\yarin\PycharmProjects\pythonProject\tempo_dataset\database_second_iter"
-#
-# # driver:
-# params["batch_size"] = num
-# TRAIN_DATASET_PATH = test_path
-# train_dataset = WormsDataset(paths_list, TRANSFORMS_DIC)
-# train_loader = DataLoader(train_dataset, batch_size=params["batch_size"], shuffle=False)
-# test_batch_shape(train_loader)
+num = 3
+test_path = r"C:\Users\yarin\PycharmProjects\pythonProject\tempo_dataset\database_second_iter"
 
+# driver:
+params["batch_size"] = num
+TRAIN_DATASET_PATH = test_path
+train_dataset = WormsDataset(paths_list, TRANSFORMS_DIC)
+train_loader = DataLoader(train_dataset, batch_size=params["batch_size"], shuffle=False)
+test_batch_shape(train_loader)
+
+# show_in_grid(train_loader)
+
+# todo: read article and implement (U-net)
+# todo: get from itay channel and space transformations
+# todo: preprocess with eyals data
+# todo: fix preprocess to give gray image with uint16 and not 8
+# todo: fix image visualisation
+# NEW todo: what changes required for adjusting wormsdataset?
