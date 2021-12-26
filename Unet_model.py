@@ -2,7 +2,7 @@ import Worms_Dataset
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+# https://github.com/milesial/Pytorch-UNet
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
@@ -54,7 +54,7 @@ class Up(nn.Module):
         super().__init__()
 
         # if bilinear, use the normal convolutions to reduce the number of channels
-        # todo: whats bilinear? the image are single channel what channels is being reduced the features map?
+        # todo: whats bilinear? is it bilinear interpolation? the image are single channel what channels is being reduced the features map?
         # todo:  downsample is for avoid overfiting? by deleting some part of our data isnt that give us bias? why not putting random values insted?
         #  downsampleis this the regulaztion term discussed in 231n?
         # todo: why different usage in Upsampling and convtranspose when what and why?
@@ -136,3 +136,8 @@ class UNet(nn.Module):
 
     # todo: what i need to change here?
     # todo: how will this connect to my wormdataset?
+    # todo: chossing regularization?
+    # todo:gradient checking?
+    # todo: what initialization we choose for filters and why?
+    # todo: to low can make gradint colapse to zero to high will stick to supreme and minima cs231n says np.random(n)*sqrt(2/n)
+    # todo: why relu and not other?(softmax etc)
