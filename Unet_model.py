@@ -19,6 +19,7 @@ class DoubleConv(nn.Module):
             # todo: what more feature do i need to calculate and how (EX VX etc) and if BatchNorm2d do it for me?
             # todo: why we use BatchNorm2d isnt relu Regularizes the values(wasnt on the papaer architecture)? “change in the distribution of network activations due to the change in network parameters during training” (Ioffe & Szegedy, 2015).,"reduces the internal covariate shif"?
             # todo: all this sequential is equivalent to two blue right arrows at the papers graph ?
+# todo: why Cross-correlation is the chosen conv? https://en.wikipedia.org/wiki/Cross-correlation Conv2d is Cross-correlation of filter and images relevant recipt field
             nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(mid_channels),
             nn.ReLU(inplace=True),

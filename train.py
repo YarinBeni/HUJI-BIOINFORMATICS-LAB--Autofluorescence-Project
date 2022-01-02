@@ -7,11 +7,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import wandb
+from torchvision import transforms as T
 from torch import optim
 from torch.utils.data import DataLoader, random_split
 from tqdm import tqdm
-
-from utils.data_loading import BasicDataset, CarvanaDataset
+import utils.Worms_Dataset
+from utils import Worms_Dataset
 from utils.dice_score import dice_loss
 from evaluate import evaluate
 from unet import UNet
@@ -20,6 +21,12 @@ dir_img = Path('./data/imgs/')
 dir_mask = Path('./data/masks/')
 dir_checkpoint = Path('./checkpoints/')
 
+
+# todo: ask for specific direction in order to try and push the project forward in exam period
+# todo: what changes required for adjusting wormsdataset? - work in progress
+# todo: fix preprocess to give gray image with uint16 and not 8
+# todo: tell itay its uint8 and not uint16 print((dic_image).dtype)
+# todo: fix image visualisation  - work in progress
 
 def train_net(net,
               device,
@@ -31,22 +38,38 @@ def train_net(net,
               img_scale: float = 0.5,
               amp: bool = False):
     # 1. Create dataset
-    try:
-        dataset = CarvanaDataset(dir_img, dir_mask, img_scale)
-    except (AssertionError, RuntimeError):
-        dataset = BasicDataset(dir_img, dir_mask, img_scale)
+    DIC_NAME = "dic_name"
+    FOLDER_PATH = "folder_path"
+    EGFP_NAME = "egfp_name"
+    params = {"batch_size": 2, "num_workers": 4, "image_max_size": (0, 0),
+              "in_channels": 1, "num_classes": 1,
+              "T.CenterCrop": 0  # todo: need to decided size of center crop to fit CNN
+              }
+
+    # todo: need to decided size of center crop - what size do i need to choose in order for it to get along with CNN
+    #  architecture ?
+    TRANSFORMS_DIC = {"space_transform": None, "dic_transform": T.CenterCrop
+        , "flor_transform": T.CenterCrop, "T.CenterCrop": params["T.CenterCrop"]}
+
+    train_path = r'C:\Users\yarin\PycharmProjects\pythonProject\2021-12-23\train'
+    val_path = r'C:\Users\yarin\PycharmProjects\pythonProject\2021-12-23\validation'
+
+    train_path_arr = Worms_Dataset.make_paths_list(train_path)
+    val_path_arr = Worms_Dataset.make_paths_list(val_path)
 
     # 2. Split into train / validation partitions
-    n_val = int(len(dataset) * val_percent)
-    n_train = len(dataset) - n_val
-    train_set, val_set = random_split(dataset, [n_train, n_val], generator=torch.Generator().manual_seed(0))
+    train_set = Worms_Dataset.WormsDataset(train_path_arr, TRANSFORMS_DIC)
+    val_set = Worms_Dataset.WormsDataset(val_path_arr, TRANSFORMS_DIC)
+    n_val = int(val_set.len())
+    n_train = int(train_set.len())
+    # todo: do i need to normalize the image/label before training starts ? or Batchnorm is sufficient? if so when?
 
-    # 3. Create data loaders
+    # 3. Create data loaders #todo: insert params[keys] as parameters.
     loader_args = dict(batch_size=batch_size, num_workers=4, pin_memory=True)
     train_loader = DataLoader(train_set, shuffle=True, **loader_args)
     val_loader = DataLoader(val_set, shuffle=False, drop_last=True, **loader_args)
 
-    # (Initialize logging)
+    # (Initialize logging) # todo: please explain what happens here ?
     experiment = wandb.init(project='U-Net', resume='allow', anonymous='must')
     experiment.config.update(dict(epochs=epochs, batch_size=batch_size, learning_rate=learning_rate,
                                   val_percent=val_percent, save_checkpoint=save_checkpoint, img_scale=img_scale,
@@ -56,19 +79,24 @@ def train_net(net,
         Epochs:          {epochs}
         Batch size:      {batch_size}
         Learning rate:   {learning_rate}
-        Training size:   {n_train}
-        Validation size: {n_val}
+        Training size:   {train_set.len()}
+        Validation size: {0}
         Checkpoints:     {save_checkpoint}
         Device:          {device.type}
         Images scaling:  {img_scale}
         Mixed Precision: {amp}
     ''')
 
+    # todo explain what happening here ?
     # 4. Set up the optimizer, the loss, the learning rate scheduler and the loss scaling for AMP
     optimizer = optim.RMSprop(net.parameters(), lr=learning_rate, weight_decay=1e-8, momentum=0.9)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'max', patience=2)  # goal: maximize Dice score
     grad_scaler = torch.cuda.amp.GradScaler(enabled=amp)
+
+    # todo: how to switch loss i have criterion and dice_loss to switch both? if so what to set the parameters?
+    # https://pytorch.org/docs/stable/generated/torch.nn.MSELoss.html
     criterion = nn.CrossEntropyLoss()
+    # criterion = nn.MSELoss(logits,EGFP)
     global_step = 0
 
     # 5. Begin training
@@ -79,6 +107,8 @@ def train_net(net,
             for batch in train_loader:
                 images = batch['image']
                 true_masks = batch['mask']
+                # todo: here i can add paths when to use them ?
+                paths = batch["path"]
 
                 assert images.shape[1] == net.n_channels, \
                     f'Network has been defined with {net.n_channels} input channels, ' \
@@ -90,6 +120,7 @@ def train_net(net,
 
                 with torch.cuda.amp.autocast(enabled=amp):
                     masks_pred = net(images)
+                    # todo: how to switch the loss ?
                     loss = criterion(masks_pred, true_masks) \
                            + dice_loss(F.softmax(masks_pred, dim=1).float(),
                                        F.one_hot(true_masks, net.n_classes).permute(0, 3, 1, 2).float(),
@@ -168,7 +199,7 @@ if __name__ == '__main__':
     # Change here to adapt to your data
     # n_channels=3 for RGB images
     # n_classes is the number of probabilities you want to get per pixel
-    net = UNet(n_channels=3, n_classes=2, bilinear=True)
+    net = UNet(n_channels=1, n_classes=1, bilinear=True)
 
     logging.info(f'Network:\n'
                  f'\t{net.n_channels} input channels\n'

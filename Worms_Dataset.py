@@ -1,13 +1,14 @@
 import math
 import torchvision
 import matplotlib.pyplot as plt
-from pandas.core.common import flatten
 import numpy as np
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 import cv2
 import glob
 import torch
+import os
+
 
 # #####################################################################################################################
 # Folder Structure:
@@ -35,6 +36,9 @@ import torch
 #                Define parameters
 ####################################################
 # todo: relearn whats workers and ask what will be ours -A: itay explained NEED TO GO DEEPER in TRAINING MODEL !
+DIC_NAME = "dic_name"
+FOLDER_PATH = "folder_path"
+EGFP_NAME = "egfp_name"
 params = {
     # optional parameters maybe more ?    "model": "U-net","device": "cuda","lr": 0.001,
     "batch_size": 2,  # the number of image per sample check if need to be changed -A: FOR NOW ITS FINE !
@@ -51,6 +55,7 @@ params = {
 #######################################################
 TRANSFORMS_DIC = {"space_transform": None, "dic_transform": None, "flor_transform": None}
 
+
 #  when i preprocessed the raw-images i used imread default fixture that was color image and now my database images
 #  1)do I need to preprocess them again with flag for gray or we can work from here? - A:NEED TO DO AGAIN CHANGED PIXELS!
 #  2)do I need to add to train transform Compose the function Grayscale(num_output_channels=1) or is imread() with
@@ -65,57 +70,14 @@ TRANSFORMS_DIC = {"space_transform": None, "dic_transform": None, "flor_transfor
 #       Preprocessing Create Train, Valid and Test sets
 ####################################################
 
-# how to split dataset into train and test sets? in folders structure in advanced or in runtime? - A: datasplit
-#  (Random) meanwhile self divided with index (read on torchvision.utils.data random-split) and it happens before dataloaders
-#   to ask if the label of each sample will be additional image in the sample folder for each
-#   sample? ** yarin solution: maybe to get labels folder path parameter and make a folder of labels(images) with
-#   name according to sample name and use make_path_list of labels(images) and to make image_to_label dictionary and
-#   make WormsDataset get the the dictionary as parameter and than to make get__item return (image, label=dic[
-#   images_path[index])? A: the florescence picture is the label and dic is the image already inside the database!
+# how to split dataset into train and test sets? in folders structure in advanced or in runtime? - A: predivided in
+# folder structures
 
-
-TRAIN_DATASET_PATH = r"C:\Users\yarin\PycharmProjects\pythonProject\tempo_dataset\database_second_iter"
-
-# test_data_path = 'images/test' if folders are pre-divided to test and train folders
-
-# this run on database folders and make a list of images paths when
-
-
-EGFP_LABEL = "00(EGFP)_M0000_ORG.tif"
-DIC_LABEL = "02(DIC)_M0000_ORG.tif"
-
-
-def make_paths_list(data_path):
-    """function run on the database folder and make a list of the images when
-    if n is the fixed number of images for every sample from the k samples
-    than for every sample number 1<i=<k the index (i-1)*n=<j<=i*n-1 is for the same sample
-    example: if k=5 and n=3 than for 2=i sample the images index are 3=<j=<5"""
-    path_list = []
-    for data_path in glob.glob(data_path + "/*"):
-        path_list.append(glob.glob(data_path + "/*"))
-    mixed_images = list(flatten(path_list))
-    until_label = len(list(DIC_LABEL))
-    path_list = [dic_image[:-until_label] for dic_image in mixed_images if dic_image.endswith(DIC_LABEL)]
-    return path_list
-
-
-# ask if need to shuffle the paths of images - A: no need will be happening in the dataloader
-# random.shuffle(train_image_paths)
-
-def show_dataset_paths(paths):
-    """this 4 lines is to see whats the len and paths of the dataset."""
-    n = 1  # n is the fixed number of images per sample
-    print("this is number of paths of images in the dataset: \n", len(paths))
-    for i in range(len(paths)):
-        print('train_image_path index:{}: \n'.format(i), paths[i])
-        if (i + 1) % n == 0:  # separate each sample
-            print()
-
-
+# not using every image is 1200x1200
 def get_rectangle(path_list):
     h_max, w_max = 0, 0
-    for path in path_list:
-        dic = cv2.imread(path + DIC_LABEL, 0)
+    for sample in path_list:
+        dic = cv2.imread(sample[FOLDER_PATH] + sample[DIC_NAME], 0)
         if dic.shape[-2] > h_max:
             h_max = dic.shape[-2]
         if dic.shape[-1] > w_max:
@@ -127,8 +89,44 @@ def get_rectangle(path_list):
     return h_max, w_max
 
 
-paths_list = make_paths_list(TRAIN_DATASET_PATH)
-params["image_max_size"] = get_rectangle(paths_list)
+def show_dataset_paths(paths):
+    """this 4 lines is to see whats the len and paths of the dataset."""
+    n = 1  # n is the fixed number of images per sample
+    print("this is number of paths of images in the dataset: \n", len(paths))
+    for i in range(len(paths)):
+        print('train_image_path index:{}: \n'.format(i), paths[i])
+        if (i + 1) % n == 0:  # separate each sample
+            print()
+
+
+def make_paths_list(data_path):
+    """function run on the database folder and make a list of the images when
+    if n is the fixed number of images for every sample from the k samples
+    than for every sample number 1<i=<k the index (i-1)*n=<j<=i*n-1 is for the same sample
+    example: if k=5 and n=3 than for 2=i sample the images index are 3=<j=<5"""
+    # OLD VERSION
+    # path_list = []
+    # for data_path in glob.glob(data_path + "/*"):
+    #     path_list.append(glob.glob(data_path + "/*"))
+    # mixed_images = list(flatten(path_list))
+    # until_label = len(list(DIC_LABEL))
+    # path_list = [dic_image[:-until_label] for dic_image in mixed_images if dic_image.endswith(DIC_LABEL)]
+    # return path_list
+    EGFP_LABEL = "EGFP"
+    DIC_LABEL = "DIC"
+
+    path_list = []
+    for dirpath, dirnames, filesname in os.walk(data_path):  # search in database folder
+        if filesname:  # means there is photos in the folder
+            folder_paths = {}
+            folder_paths["folder_path"] = dirpath
+            for f in filesname:
+                if DIC_LABEL in f:
+                    folder_paths["dic_name"] = "\\" + f
+                if EGFP_LABEL in f:
+                    folder_paths["egfp_name"] = "\\" + f
+            path_list.append(folder_paths)
+    return path_list
 
 
 #######################################################
@@ -149,6 +147,35 @@ class WormsDataset(Dataset):
     def __len__(self):
         return len(self.image_paths)
 
+    def __getitem__(self, index):  # ask if its ok i am running over database class __getitem__ func? -A: its fine.
+        dic_image_filepath = self.image_paths[index][FOLDER_PATH] + self.image_paths[index][DIC_NAME]
+        florescence_image_path = self.image_paths[index][FOLDER_PATH] + self.image_paths[index][EGFP_NAME]
+        # ask why cv2.imread() not referenced? saw pycharm error, and its working !-A:  Seems fine ignore it !
+
+        dic_image = torch.from_numpy(cv2.imread(dic_image_filepath, 0))  # 0 is grey flag
+        florescence_image = torch.from_numpy(cv2.imread(florescence_image_path, 0))
+        # todo: tell itay its uint8 and not uint16 print((dic_image).dtype)
+
+        # NO NEED TO PAD IMAGES
+        # dic_image, florescence_image = self.pad_sample(dic_image, florescence_image, params["image_max_size"])
+
+        if self.transform_dic["space_transform"]:
+            h_joined_images = torch.cat((dic_image, florescence_image), 0)
+
+            h_joined_images = self.transform_dic["space_transform"](h_joined_images)
+
+            dic_image = h_joined_images[0]
+            florescence_image = h_joined_images[1]
+
+        if self.transform_dic["dic_transform"]:
+            dic_image = self.transform_dic["dic_transform"](dic_image)
+
+        if self.transform_dic["flor_transform"]:
+            florescence_image = self.transform_dic["flor_transform"](florescence_image)
+
+        return {'image': dic_image, 'mask': florescence_image, 'path': self.image_paths[index][FOLDER_PATH]}
+
+    # not using every image is 1200x1200
     @staticmethod
     def pad_sample(dic, flor, size_tuple):
         if size_tuple[0] == 0 and size_tuple[1] == 0:
@@ -177,47 +204,6 @@ class WormsDataset(Dataset):
         pad_label = (torch.nn.ZeroPad2d((w1_pad, w2_pad, h1_pad, h2_pad)))(flor)
         pad_label = pad_label[None, :, :]
         return pad_image, pad_label
-
-    def __getitem__(self, index):  # ask if its ok i am running over database class __getitem__ func? -A: its fine.
-        dic_image_filepath = self.image_paths[index] + DIC_LABEL
-        florescence_image_path = self.image_paths[index] + EGFP_LABEL
-        # ask why cv2.imread() not referenced? saw pycharm error, and its working !-A:  Seems fine ignore it !
-
-        dic_image = torch.from_numpy(cv2.imread(dic_image_filepath, 0))  # 0 is grey flag
-        florescence_image = torch.from_numpy(cv2.imread(florescence_image_path, 0))
-        # todo: tell itay its uint8 and not uint16 print((dic_image).dtype)
-
-        # print("size of dic: ", dic_image.shape)
-        # print("size of flor: ", florescence_image.shape)
-        # print()
-
-        dic_image, florescence_image = self.pad_sample(dic_image, florescence_image, params["image_max_size"])
-        #
-        # print("size of dic: ", dic_image.shape)
-        # print("size of flor: ", florescence_image.shape)
-        # print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n")
-
-        if self.transform_dic["space_transform"]:
-            h_joined_images = torch.cat((dic_image, florescence_image), 0)
-            # print("size of joined before transform: ", h_joined_images.shape)
-
-            h_joined_images = self.transform_dic["space_transform"](h_joined_images)
-            # print("size of joined after transform: \n", h_joined_images.shape)
-
-            dic_image = h_joined_images[0]
-            florescence_image = h_joined_images[1]
-            # print("size of dic after transform: ", dic_image.shape)
-            # print("size of flor after transform: ", florescence_image.shape)
-            # print()
-
-        if self.transform_dic["dic_transform"]:
-            dic_image = self.transform_dic["dic_transform"](dic_image)
-
-        if self.transform_dic["flor_transform"]:
-            florescence_image = self.transform_dic["flor_transform"](florescence_image)
-
-        # NEW TODO: this label is mcher image in future will be florescence
-        return dic_image, florescence_image, self.image_paths[index]
 
 
 # valid_dataset = WormsDataset(valid_image_paths,test_transforms) #test transforms are applied
@@ -257,10 +243,12 @@ def test_batch_shape(dataset_iter):
                 print("\n-----------------------------------------------------------------------")
 
             if i == 2:
-                print(f"this is the tuple contain the paths to the images:\n {batch[i]}")
+                print(f"this is the tuple contain the paths to the images:\n {batch[i][0]}")
         print(f"\n"
               f"Finish of batch number {cnt}\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n.\n.\n.\n")
         cnt = +1
+        if cnt > 10:
+            return
 
 
 # test_batch_shape(train_loader)
@@ -302,32 +290,32 @@ def show_in_grid(images_iter):
 
 ############################################################################################################
 # ********************************TEST the shape of the batch: **********************************************
-#Worms_Dataset TEST:
-#in the database_second_iter folder: 
-#5 samples, folder for each sample and in every sample 3 images: EGFP,DIC,MCHER.
-#when DIC is image and EGFP is label ( not using MCHER) and max contain rectangle is (203, 933)
-        
+# Worms_Dataset TEST:
+# in the database_second_iter folder:
+# 5 samples, folder for each sample and in every sample 3 images: EGFP,DIC,MCHER.
+# when DIC is image and EGFP is label ( not using MCHER) and max contain rectangle is (203, 933)
+
 # TEST the shape of the batch:
 # 1) update test_path according to database_second_iter path and update num into the wanted batch size
 # 2) run test_batch_shape to get the batch shape and information print into python console
 ############################################################################################################
 
 #
+train_path = r'C:\Users\yarin\PycharmProjects\pythonProject\2021-12-23\train'
+params["image_max_size"] = get_rectangle(train_path)
 num = 3
-test_path = r"C:\Users\yarin\PycharmProjects\pythonProject\tempo_dataset\database_second_iter"
 
 # driver:
-params["batch_size"] = num
-TRAIN_DATASET_PATH = test_path
-train_dataset = WormsDataset(paths_list, TRANSFORMS_DIC)
-train_loader = DataLoader(train_dataset, batch_size=params["batch_size"], shuffle=False)
-test_batch_shape(train_loader)
+# params["batch_size"] = num
+# train_dataset = WormsDataset(train_path, TRANSFORMS_DIC)
+# train_loader = DataLoader(train_dataset, batch_size=params["batch_size"], shuffle=False)
+# test_batch_shape(train_loader)
 
 # show_in_grid(train_loader)
 
-# todo: read article and implement (U-net)
-# todo: get from itay channel and space transformations
-# todo: preprocess with eyals data
-# todo: fix preprocess to give gray image with uint16 and not 8
-# todo: fix image visualisation
-# NEW todo: what changes required for adjusting wormsdataset?
+# todo: read article and implement (U-net) - work in progress
+# get from itay channel and space transformations -A: told to use CenterCrop for label and image
+# preprocess with eyals data - A: manged to fix the dataset according to new dataset
+# todo: fix preprocess to give gray image with uint16 and not 8 +# todo: tell itay its uint8 and not uint16 print((dic_image).dtype)
+# todo: fix image visualisation  - work in progress
+# NEW todo: what changes required for adjusting wormsdataset? - work in progress
