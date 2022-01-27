@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 from torch import optim
 from Unet_model import UNet
 
+
 ###########################
 # 1. Create dataset
 ###########################
@@ -23,7 +24,7 @@ def train_model_Unet():
     EGFP_NAME = "egfp_name"
     params = {"batch_size": 1, "num_workers": 4, "image_max_size": (0, 0),
               "in_channels": 1, "num_classes": 1,
-              "T.CenterCrop": 250,  # todo: need to decided size of center crop
+              "T.CenterCrop": 256, # todo: need to decided size of center crop
               # new added from original file params:
 
               "epochs": 5,
@@ -34,8 +35,8 @@ def train_model_Unet():
               'img_scale': 0.5,
               'amp': False}
     #
-    TRANSFORMS_DIC = {"space_transform": None, "dic_transform": F.Compose([F.RandomCrop(250)]),
-                      "flor_transform": F.Compose([F.CenterCrop(250)])}
+    TRANSFORMS_DIC = {"space_transform": None, "dic_transform": F.Compose([F.RandomCrop(params['T.CenterCrop'])]),
+                      "flor_transform": F.Compose([F.CenterCrop(params['T.CenterCrop'])])}
     train_path = r'C:\Users\yarin\PycharmProjects\pythonProject\2021-12-23\train'
     val_path = r'C:\Users\yarin\PycharmProjects\pythonProject\2021-12-23\validation'
     train_path_arr = Worms_Dataset.make_paths_list(train_path)
@@ -72,8 +73,7 @@ def train_model_Unet():
     # todo: old_goal: maximize Dice score new_goal: minimize MSE score done correctly?
     # ReduceLROnPlateau := Reduce learning rate when a metric has stopped improving.
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2)
-    grad_scaler = torch.cuda.amp.GradScaler(enabled=params["amp"])
-    #
+
     # todo: how to switch loss i have criterion and dice_loss to switch both? if so what to set the parameters?
     criterion = nn.MSELoss()  # https://pytorch.org/docs/stable/generated/torch.nn.MSELoss.html
     global_step = 0
@@ -92,31 +92,27 @@ def train_model_Unet():
                 images, true_masks, paths = batch['image'], batch['mask'], batch["path"]
 
                 images = images.to(device=params['device'], dtype=torch.float32)
-                true_masks = true_masks.to(device=params['device'], dtype=torch.long)  # todo: dtype=torch.long is good?
-                with torch.cuda.amp.autocast(enabled=params['amp']):  # todo:need this line or to delete?
-                    # todo:for masks_pred do I need to do net(images.view(-1,IMAGE_WIDTH*IMAGE_HEIGHT)) to fit model?
-                    masks_pred = net(images[None])
-                    loss = criterion(masks_pred, true_masks)
+                true_masks = true_masks.to(device=params['device'],
+                                           dtype=torch.float32)  # todo: dtype=torch.long is good?
+                masks_pred = net(images[None])
+                loss = criterion(masks_pred, true_masks)
 
-                optimizer.zero_grad(
-                    set_to_none=True)  # todo: maybe set_to_none=True is an issue according to documentation
-                grad_scaler.scale(loss).backward()
-                grad_scaler.step(optimizer)
-                grad_scaler.update()
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
                 pbar.update(images.shape[0])
                 global_step += 1
                 epoch_loss += loss.item()
 
-            pbar.set_postfix(**{'loss (batch)': loss.item(), 'path(batch)': batch["path"]})
+                pbar.set_postfix(**{'loss (batch)': loss.item(), 'path(batch)': batch["path"]})
 
-            # Evaluation round
-            division_step = (n_train // (10 * params["batch_size"]))
-            if division_step > 0:
-                if global_step % division_step == 0:
-                    val_score = evaluate(net, val_loader, params['device'])
-                    scheduler.step(val_score)
-
+        # Evaluation round
+        division_step = (n_train // (10 * params["batch_size"]))
+        if division_step > 0:
+            if global_step % division_step == 0:
+                val_score = evaluate(net, val_loader, params['device'])
+                scheduler.step(val_score)
 
 
 if __name__ == '__main__':

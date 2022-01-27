@@ -15,15 +15,11 @@ def evaluate(net, dataloader, device):
         image, mask_true, path = batch['image'], batch['mask'], batch['path']
         # move images and labels to correct device and type
         image = image.to(device=device, dtype=torch.float32)
-        mask_true = mask_true.to(device=device, dtype=torch.long)
-        mask_true = F.one_hot(mask_true, net.n_classes).permute(0, 3, 1, 2).float()  # todo: probably to change
+        mask_true = mask_true.to(device=device, dtype=torch.float32)
 
         with torch.no_grad():
-            # todo: how to caclate MSE_Score do we need one-hot format?
             # predict the mask
             mask_pred = net(image)
-            # convert to one-hot format
-            mask_pred = (F.sigmoid(mask_pred) > 0.5).float()
             # compute the MSE score
             mse_score += criterion(mask_pred, mask_true)
 
