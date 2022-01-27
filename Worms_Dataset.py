@@ -25,7 +25,8 @@ import os
 # ...
 # FOLDER\ SAMPLE_k \photodate_k_phototype_n
 #####################################################################################################################
-# I used this site : https://github.com/UtkarshGarg-UG/Deep-Learning-Projects/blob/main/Computer-Vision/Loading-Custom-Dataset/loading_custom_dataset_images.ipynb
+# I used this site : https://github.com/UtkarshGarg-UG/Deep-Learning-Projects/blob/main/Computer-Vision/Loading-
+# Custom-Dataset/loading_custom_dataset_images.ipynb
 #####################################################################################################################
 
 
@@ -37,31 +38,29 @@ DIC_NAME = "dic_name"
 FOLDER_PATH = "folder_path"
 EGFP_NAME = "egfp_name"
 worms_params = {
-    # optional parameters maybe more ?    "model": "U-net","device": "cuda","lr": 0.001,
-    "batch_size": 2,  # the number of image per sample check if need to be changed -A: FOR NOW ITS FINE !
+    # "batch_size": 2,  # the number of image per sample check if need to be changed -A: FOR NOW ITS FINE !
     "num_workers": 4,
     "image_max_size": (0, 0),
     "in_channels": 1,  # to make sure because its gray image 1 channel or maybe 3 from tensor size? -A: YES
     "num_classes": None  # to make sure we dont have classes because our label is an image -A: EXACTLY !
 }
+
+
 # to ask if this need to be the max from worms size padded up square or rectangle and how
 # -A: FOR NOW FINE in future will need to be max padded!
 
 #######################################################
 #               Define Transforms
 #######################################################
-TRANSFORMS_DIC = {"space_transform": None, "dic_transform": None, "flor_transform": None}
 
-
-#  when i preprocessed the raw-images i used imread default fixture that was color image and now my database images
-#  1)do I need to preprocess them again with flag for gray or we can work from here? - A:NEED TO DO AGAIN CHANGED PIXELS!
-#  2)do I need to add to train transform Compose the function Grayscale(num_output_channels=1) or is imread() with
-#  flag 0 in __Getitem__ is enough?  - A: imread with falg 0 is enough !
+# when i preprocessed the raw-images i used imread default fixture that was color image and now my database images
+# 1)do I need to preprocess them again with flag for gray or we can work from here? - A:NEED TO DO AGAIN CHANGED
+# PIXELS! 2)do I need to add to train transform Compose the function Grayscale(num_output_channels=1) or is imread()
+# with flag 0 in __Getitem__ is enough?  - A: imread with falg 0 is enough !
 
 # space_transform = transforms.Compose([])
 # TRANSFORMS_DIC["space_transform"] = space_transform
 
-# NEW TODO: 1) whats specific transforms i need to uses when using cat(NOT ON COLOUR CHANNEL ON SPACE RELATED)
 
 ####################################################
 #       Preprocessing Create Train, Valid and Test sets
@@ -130,12 +129,6 @@ def make_paths_list(data_path):
 #                  Create Dataset
 #######################################################
 
-
-# from here until row 125 are things mayby will be in use according to solution to the to do up top.
-
-# split train valid from train paths (80,20) in runtime train_image_paths, valid_image_paths = train_image_paths[
-# :int(0.8 * len(train_image_paths))], train_image_paths[int(0.8 * len(train_image_paths)):]
-
 class WormsDataset(Dataset):
     def __init__(self, image_paths, transform_dic):
         self.image_paths = image_paths
@@ -170,7 +163,8 @@ class WormsDataset(Dataset):
         if self.transform_dic["flor_transform"]:
             florescence_image = self.transform_dic["flor_transform"](florescence_image)
 
-        return {'image': dic_image, 'mask': florescence_image, 'path': self.image_paths[index][FOLDER_PATH]}
+        return {'image': dic_image[None, :, :], 'mask': florescence_image[None, :, :],
+                'path': self.image_paths[index][FOLDER_PATH]}
 
     # not using every image is 1200x1200
     @staticmethod
@@ -215,15 +209,6 @@ class WormsDataset(Dataset):
 #######################################################
 #  until images arent same size cant use shuffle - need to be fixed int the preprocessing step ! A: FIXED
 
-# valid_loader = DataLoader(
-#     valid_dataset, batch_size=params["batch_size"], shuffle=True
-# )
-#
-# test_loader = DataLoader(
-#     test_dataset, batch_size=params["batch_size"], shuffle=False
-# )
-
-
 def test_batch_shape(dataset_iter):
     cnt = 0
     for batch in dataset_iter:
@@ -240,7 +225,7 @@ def test_batch_shape(dataset_iter):
 
         print(f"this is the tuple contain the paths to the images:\n {batch['path']}")
         print(f"\n"
-          f"Finish of batch number {cnt}\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n.\n.\n.\n")
+              f"Finish of batch number {cnt}\n~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n.\n.\n.\n")
         cnt = +1
     if cnt > 5:
         return
@@ -251,7 +236,7 @@ def test_batch_shape(dataset_iter):
 #######################################################
 #                  Visualize Dataset
 #         Images are plotted after augmentation
-# todo: not finished
+# todo: not finished shows all one by one and not one image at end of each epoch
 #######################################################
 
 def show_images_one_by_one(dataset):
@@ -283,7 +268,6 @@ def show_in_grid(images_iter):
         plt.imshow(np.transpose(grid, (1, 2, 0)))
         plt.show()
 
-
 ############################################################################################################
 # ********************************TEST the shape of the batch: **********************************************
 # Worms_Dataset TEST:
@@ -295,16 +279,17 @@ def show_in_grid(images_iter):
 # 1) update test_path according to database_second_iter path and update num into the wanted batch size
 # 2) run test_batch_shape to get the batch shape and information print into python console
 
-#
+
+# TRANSFORMS_DIC = {"space_transform": None, "dic_transform": None, "flor_transform": None}
 # train_path = r'C:\Users\yarin\PycharmProjects\pythonProject\2021-12-23\train'
 # paths_list = make_paths_list(train_path)
-# params["image_max_size"] = get_rectangle(paths_list)
-# num = 3
+# worms_params["image_max_size"] = get_rectangle(paths_list)
+# num = 2
 #
 # # driver:
-# params["batch_size"] = num
+# worms_params["batch_size"] = num
 # train_dataset = WormsDataset(paths_list, TRANSFORMS_DIC)
-# train_loader = DataLoader(train_dataset, batch_size=params["batch_size"], shuffle=False)
+# train_loader = DataLoader(train_dataset, batch_size=worms_params["batch_size"], shuffle=False)
 # test_batch_shape(train_loader)
 
 ############################################################################################################
@@ -313,4 +298,3 @@ def show_in_grid(images_iter):
 # todo: get from itay channel and space transformations
 # todo: fix preprocess to give gray image with uint16 and not 8
 # todo: fix image visualisation
-

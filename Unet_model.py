@@ -114,7 +114,3 @@ class UNet(nn.Module):
         x = self.up4(x, x1)
         logits = self.outc(x)
         return logits
-
-# todo: what i need to change here? todo: chossing regularization?
-# todo:gradient checking? todo: what initialization we choose for filters and why?
-#  to low can make gradint colapse to zero to high will stick to supreme and minima cs231n says np.random(n)*sqrt(2/n)
