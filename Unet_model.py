@@ -1,10 +1,8 @@
-import Worms_Dataset
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
-# https://github.com/milesial/Pytorch-UNet
 
 class DoubleConv(nn.Module):
     """(convolution => [BN] => ReLU) * 2"""
@@ -12,7 +10,7 @@ class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels, mid_channels=None):
         super().__init__()
         if not mid_channels:
-            mid_channels = out_channels  # Q: why to do mid channels? A: advanced topic in training not relevant now
+            mid_channels = out_channels
         self.double_conv = nn.Sequential(
             nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1, bias=False),
             nn.BatchNorm2d(mid_channels),
@@ -21,22 +19,9 @@ class DoubleConv(nn.Module):
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
-        # Q:NOT IMPORTANT why 3x3 conv?(besides its in the article), A:in csn231
-        # Q: it named kernel because a kernel trick ? A: missing
-        # (The trick is to replace this inner product with another one, without even knowing Φ)
-        # Q: how do we calculate our bias ? A:no need because of batch_norm
-        # Q: why we use BatchNorm2d isnt relu Regularizes the values(wasnt on the papaer architecture)?
-        # “change in the distribution of network activations due to the change in network parameters during training”
-        # (Ioffe & Szegedy, 2015).,"reduces the internal covariate shif"? A: its working, yet to be discovered why
-        # Q: all this sequential is equivalent to two blue right arrows at the papers graph ? A:yes
-        # Q: why Cross-correlation is the chosen conv? https://en.wikipedia.org/wiki/Cross-correlation
-        # A:in cs231n,  Conv2d is Cross-correlation of filter and images relevant recipt field
 
     def forward(self, x):
         return self.double_conv(x)
-
-    # Q: this equivalent to one red arrow down and two blue in the papers graph? A: yes
-    # Q: why to split the architecture into separated class? A: convince,readability etc
 
 
 class Down(nn.Module):
@@ -60,14 +45,6 @@ class Up(nn.Module):
         super().__init__()
 
         # if bilinear, use the normal convolutions to reduce the number of channels
-        # Q: whats bilinear? A: is it bilinear interpolation the image are single channel  channels is being reduced
-        # the features map
-        # Q:  down_sample is for avoid overfitting? by deleting some part of our data isn't that give us bias? why not
-        # putting random values insted? A: its the Unet model - i have mistaken with different concept
-        # Q: downsampleis this the regularization term discussed in 231n? A: no
-        # Q: why different usage in Upsampling and convtranspose when what and why?
-        # Upsampling is the process of inserting zero-valued samples between original samples to increase the sampling rate
-        # A: cs231n
         if bilinear:
             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
             self.conv = DoubleConv(in_channels, out_channels, in_channels // 2)
@@ -76,8 +53,6 @@ class Up(nn.Module):
             self.conv = DoubleConv(in_channels, out_channels)
 
     def forward(self, x1, x2):
-        # Q: is this the two gray arrows in papers graph ? A:yes
-        # Q:in article he didnt pad valid conv value here he do different from the paper or only for concat? A:both
         x1 = self.up(x1)
         # input is CHW
         diffY = x2.size()[2] - x1.size()[2]
@@ -93,14 +68,12 @@ class Up(nn.Module):
 
 
 class OutConv(nn.Module):
-    # Q: do we have last fully coneceted layer? is it here? this is the last feature or the middle one? A:yes
     def __init__(self, in_channels, out_channels):
         super(OutConv, self).__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
 
     def forward(self, x):
         return self.conv(x)
-
 
 #########################################################################################
 
