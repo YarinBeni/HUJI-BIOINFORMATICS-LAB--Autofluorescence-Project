@@ -6,7 +6,7 @@ This project aims to address the problem of autofluorescence in images using com
 To tackle this problem, I used a local database of images and implemented the U-Net deep learning model with PyTorch and OpenCV. I also built a custom dataset for the PyTorch API to use for training.
 
 The U-Net model is a popular choice for image segmentation tasks, as it is able to effectively capture both the local and global context of an image. It is composed of an encoder and a decoder, with skip connections between the two to allow for the transfer of low-level features from the encoder to the decoder.
-From Paper "U-Net: Convolutional Networks for Biomedical Image Segmentation", Olaf Ronneberger, Philipp Fischer, Thomas Brox link: https://arxiv.org/abs/1505.04597.
+From Paper "U-Net: Convolutional Networks for Biomedical Image Segmentation", Olaf Ronneberger, Philipp Fischer, Thomas Brox link: https://arxiv.org/abs/1505.04597.  
 I used PyTorch to build and train the model, taking advantage of its efficient GPU support and flexible architecture. I also utilized OpenCV for image preprocessing and visualization.
 
 ## Current Status
