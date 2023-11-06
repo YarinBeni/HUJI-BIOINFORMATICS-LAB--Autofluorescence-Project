@@ -4,6 +4,10 @@ This project aims to address the problem of autofluorescence in images using com
 Autofluorescence is a phenomenon that occurs when certain materials emit light in response to excitation by external light sources.  
 This can cause unwanted artifacts in images and can make it difficult to accurately analyze or interpret the content of the image.
 
+<img src="https://github.com/YarinBeni/HUJI-BIOINFORMATICS-LAB--Autofluorescence-Project/blob/main/Models%20Input%2C%20Label%2C%20Prediction.png?raw=true" width="600" height="200">
+
+*Figure: UNet Model Visualization. From left to right - the first image shows the partial input to the model, which consists of a tuple comprising a standard image and its corresponding X-ray image, here just the standard image. The middle image displays the target, which is the same image devoid of autofluorescence noise. The last image on the right is the model's output, a prediction made by the UNet model to closely replicate the signal in the target image, minimizing the influence of noise.*
+
 ## Methodology
 To tackle this problem, I used a local database of images , built a custom dataset for the PyTorch API to use for training and implemented the U-Net deep learning model with PyTorch and OpenCV.   
 
